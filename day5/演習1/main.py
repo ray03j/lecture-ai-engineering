@@ -1,4 +1,5 @@
 import os
+import time
 import mlflow
 import mlflow.sklearn
 import pandas as pd
@@ -47,9 +48,11 @@ def train_and_evaluate(
         n_estimators=n_estimators, max_depth=max_depth, random_state=random_state
     )
     model.fit(X_train, y_train)
+    start_time = time.time()
     predictions = model.predict(X_test)
+    inference_time = time.time() - start_time
     accuracy = accuracy_score(y_test, predictions)
-    return model, accuracy
+    return model, accuracy, inference_time
 
 
 # モデル保存
@@ -102,7 +105,7 @@ if __name__ == "__main__":
     )
 
     # 学習と評価
-    model, accuracy = train_and_evaluate(
+    model, accuracy, inference_time = train_and_evaluate(
         X_train,
         X_test,
         y_train,
@@ -114,6 +117,8 @@ if __name__ == "__main__":
 
     # モデル保存
     log_model(model, accuracy, params)
+    print(f"推論時間: {inference_time:.4f}秒")
+    mlflow.log_metric("inference_time", inference_time)
 
     model_dir = "models"
     os.makedirs(model_dir, exist_ok=True)
